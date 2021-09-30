@@ -10,6 +10,14 @@ def test_get_assignments_student_1(client, h_student_1):
     for assignment in data:
         assert assignment['student_id'] == 1
 
+def test_get_assignments_student_bad_url(client, h_student_1):
+    response = client.get(
+        '/student/assignment',
+        headers=h_student_1
+    )
+
+    assert response.status_code == 404
+
 
 def test_get_assignments_student_2(client, h_student_2):
     response = client.get(
@@ -57,3 +65,30 @@ def test_submit_assignment_student_1(client, h_student_1):
     assert data['student_id'] == 1
     assert data['state'] == 'SUBMITTED'
     assert data['teacher_id'] == 2
+
+def test_post_assignment_student_bad_id(client, h_student_1):
+    id=120000
+    content = 'ABCD TESTPOST'
+
+    response = client.post(
+        '/student/assignments',
+        headers=h_student_1,
+        json={
+            'id':id,
+            'content': content
+        })
+
+    assert response.status_code == 404
+
+    data = response.json
+    assert data['error'] == 'FyleError'
+
+def test_home(client, h_student_1):
+    response = client.get(
+        '/',
+        headers=h_student_1
+    )
+    assert response.status_code == 200
+
+    data = response.json
+    assert data['status'] == "ready"  

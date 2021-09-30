@@ -5,13 +5,18 @@ from core.libs import helpers, assertions
 from core.models.teachers import Teacher
 from core.models.students import Student
 from sqlalchemy.types import Enum as BaseEnum
-
+from marshmallow.exceptions import ValidationError
 
 class GradeEnum(str, enum.Enum):
     A = 'A'
     B = 'B'
     C = 'C'
     D = 'D'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
 
 
 class AssignmentStateEnum(str, enum.Enum):
@@ -77,3 +82,29 @@ class Assignment(db.Model):
     @classmethod
     def get_assignments_by_student(cls, student_id):
         return cls.filter(cls.student_id == student_id).all()
+
+
+    @classmethod
+    def get_assignments_by_teacher(cls, teacher_id):
+        return cls.filter(cls.teacher_id == teacher_id).all()
+
+
+    @classmethod
+    def grade_assignment(cls, assignment_new: 'Assignment'):
+        if assignment_new.id is not None:
+            assignment = Assignment.get_by_id(assignment_new.id)
+            assertions.assert_found(assignment, 'No assignment with this id was found')
+            assertions.assert_valid(assignment.state == AssignmentStateEnum.SUBMITTED,
+                                    'only assignment in submitted state can be graded')
+            assertions.assert_valid(assignment.teacher_id == assignment_new.teacher_id,
+                                    'assignment submitted to a different techer')
+            if(GradeEnum.has_value(assignment_new.grade)==False):
+                raise ValidationError("Grade in Invalid")
+            assignment.grade = assignment_new.grade
+            assignment.state = AssignmentStateEnum.GRADED
+        else:
+            assignment = assignment_new
+            db.session.add(assignment_new)
+
+        db.session.flush()
+        return assignment

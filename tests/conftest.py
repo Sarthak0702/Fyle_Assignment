@@ -54,3 +54,14 @@ def h_teacher_2():
     }
 
     return headers
+
+@pytest.fixture
+def h_teacher_3_bad():
+    headers = {
+        'Y-Principal': json.dumps({
+            'teacher_id': 2,
+            'user_id': 4
+        })
+    }
+
+    return headers
